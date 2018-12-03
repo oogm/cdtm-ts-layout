@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 
 @app.route("/")
-def hello():
+def start():
     # create response
     response = make_response(run())
     # filename
