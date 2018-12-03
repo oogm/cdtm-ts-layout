@@ -24,4 +24,5 @@ functions:
     handler: wsgi.handler
     events:
       - http: ANY /
+      - http: ANY /sources
       - http: 'ANY {proxy+}'

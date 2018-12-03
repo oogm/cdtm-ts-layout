@@ -714,10 +714,11 @@ def generate_abbrevations(book):
 # </Sources-Section>
 # ```
 
-# In[59]:
+# In[62]:
 
 
 def generate_sources(book, map_hash_source):
+    errors = []
     # invert the mapping NUMBER -> HASH
     map_number_hash = {v: k for k, v in map_hash_source.items()}
     
@@ -747,12 +748,22 @@ def generate_sources(book, map_hash_source):
             # Add the value of the source to the right order of the array
             sources[source_index] = (val, responsible)
         else:
-            print("Source not used", responsible , key)
+            err = {
+                "type": "Source not used",
+                "responsible": responsible,
+                "key": key,
+            }
+            errors.append(err)
         
     # Iterate of the ordered source array and genrate the xml
     for index, (source, responsible) in enumerate(sources):
         if (len(source) == 0):
-            print("Source not declared", map_number_hash[index+1])
+            err = {
+                "type": "Source not declared",
+                "responsible": "",
+                "key": map_number_hash[index+1],
+            }
+            errors.append(err)
         else:
             result += '<Source responsible="'+responsible+'">\n'
             result += "<" + SOURCES_KEY_TAG + ">" + str(index+1) + "</" + SOURCES_KEY_TAG + "> "
@@ -764,12 +775,12 @@ def generate_sources(book, map_hash_source):
     result += "</Sources>\n"    
     result += "</Sources-Sections>\n"
     
-    return result
+    return result, errors
 
 
 # # Run the pipeline
 
-# In[60]:
+# In[63]:
 
 
 def run():
@@ -787,14 +798,15 @@ def run():
     # Replace the citation
     xml, authors = find_author_and_replace(xml)
     print(authors)
-    xml += generate_sources(book, authors)
+    sources, errors = generate_sources(book, authors)
+    xml += sources
     # Wrap the root object arround all
     xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Root>\n' + xml + '</Root>'
     # print(xml)
-    return xml
+    return xml, errors
 
 
-# In[61]:
+# In[64]:
 
 
 # run()
