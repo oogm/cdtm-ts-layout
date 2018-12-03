@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[43]:
 
 
 from __future__ import print_function
@@ -13,6 +13,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 from itertools import islice
 import re
+from lxml import etree
 
 
 # # Key takeaways
@@ -31,7 +32,7 @@ import re
 # 
 # ## Headlines
 
-# In[1]:
+# In[44]:
 
 
 # Abbreviations-Section
@@ -61,7 +62,7 @@ SOURCES_KEY_TAG = "H6"
 
 # ## 1.1. Text formatation
 
-# In[17]:
+# In[45]:
 
 
 def sanitize_text(text):
@@ -69,7 +70,7 @@ def sanitize_text(text):
     return text
 
 
-# In[18]:
+# In[46]:
 
 
 def sanitize_text_test():
@@ -79,7 +80,7 @@ def sanitize_text_test():
     
 
 
-# In[19]:
+# In[47]:
 
 
 def generate_xml_list(text):
@@ -92,7 +93,7 @@ def generate_xml_list(text):
     return result
 
 
-# In[20]:
+# In[48]:
 
 
 def generate_xml_list_test():
@@ -103,7 +104,7 @@ def generate_xml_list_test():
 
 # ## 1.2. Find and replace author
 
-# In[21]:
+# In[49]:
 
 
 def find_author_and_replace(text):    
@@ -112,36 +113,36 @@ def find_author_and_replace(text):
     p = re.compile("\[([a-zäöüÄÖÜA-Z_0-9]*)")
     for match in p.finditer(text):
         key = match.group(1)
-        if key not in authors:
+        if key not in authors and len(key) > 0:
             counter += 1
             authors[key] = counter
     
     # print(authors)
             
     for key, value in authors.items():
-        text = text.replace("["+key, "["+str(value))
+        text = text.replace("["+str(key), "["+str(value))
         
     return (text, authors)
 
 
-# In[22]:
+# In[50]:
 
 
 def find_author_and_replace_test():
-    test = "The side bar include [KRAUZ, p.22] a Cheatsheet, full [KRAUZ] Reference, sults with the Tools below [SEB], [KAYA]. Replace & List outp [HASE]."
+    test = "The side bar include [] [KRAUZ, p.22] a Cheatsheet, full [KRAUZ] Reference, sults with the Tools below [SEB], [KAYA]. Replace & List outp [HASE]. [KRAUZ] [KRAUZ] [KRAUZ] [KRAUZ]"
     text, authors = find_author_and_replace(test)
-    print(text)
-    print(authors)
+    #print(text)
+    #print(authors)
 
     
-#find_author_and_replace_test()
+find_author_and_replace_test()
 
 
 # ## Download the data from the spreadsheet
 
 # http://www.countingcalculi.com/explanations/google_sheets_and_jupyter_notebooks/
 
-# In[23]:
+# In[51]:
 
 
 # If modifying these scopes, delete the file token.json.
@@ -152,69 +153,363 @@ SPREADSHEET_ID = '16jza4slLRK4Fe3-O_f410P_-WZBe5EN-fmq_OW3HJNQ'
 RANGE_NAME = 'Trends'
 
 
-# In[24]:
+# In[52]:
 
 
 def load_data_from_google_sheets():
     scope = ['https://www.googleapis.com/auth/spreadsheets.readonly']
     credentials = ServiceAccountCredentials.from_json_keyfile_name('./credentials.json', scope)
+    # print(credentials)
     gc = gspread.authorize(credentials)
     
     book = gc.open_by_key(SPREADSHEET_ID)
     return book
 
 
-# In[25]:
+# In[53]:
 
 
 book = load_data_from_google_sheets();
+# print(book)
 
 
 # # XML
-# 
 
-# ## Abbrevations
+# ## Scenarios
 # 
-# Generate the abbrevations from the sheet and transform it into the XML structure
-# 
+# Generate scenario XML from excel sheet
 # ```
-# <Abbreviations>
-# <Abbreviation><H6>AI</H6>Artificial Intelligence</Abbreviation>
-# <Abbreviation><H6>BIM</H6>Building information modeling</Abbreviation>
-# <Abbreviation><H6>LCC</H6>Life Cycle Costing</Abbreviation>
-# ...
-# </Abbreviations>
+# <Scenarios>
+#   <Scenario>
+#     <Title>
+#     <H1>shitty title</H1>
+#     </Title>
+#     
+#     <Subtitle>
+#     <H2>shitty subtitle</H2>
+#     </Subtitle>
+#     
+#     <Text>
+#     sometext
+#     </Text>
+#   </Scenario>
+#   <Scenario>
+#       .
+#       .
+#       .
+#   </Scenario>
+#   ...
+#   ...
+#   ...
+#   <Scenario>
+#       .
+#       .
+#       .
+#   </Scenario>
+# </Scenarios>
 # ```
 
-# In[26]:
+# In[54]:
 
 
-def generate_abbrevations(book):
-    worksheet = book.worksheet("Abreviations")
-    table = worksheet.get_all_values()
-    ##Convert table data into a dataframe
-    df = pd.DataFrame(table[1:], columns=table[0])
-    # Init XML structure
-    result = "<Abbreviations-Section>\n";
-    result += "<H1>"+ABBREVIATION_TITLE+"</H1>\n";
-    result += "<Abbreviations>\n";
-    # Iterate over the rows
-    for index, row in islice(df.iterrows(), 1, None):
-        # Grab the key and values
-        key = sanitize_text(row[0])
-        val = sanitize_text(row[1])
-        # Create a xml string
-        result += "<Abbreviation><"+ABBREVIATION_HEADLINE_TAG+">" + key + "</"+ABBREVIATION_HEADLINE_TAG+">" + val + "</Abbreviation>\n"
-    # Add closing tag
-    result += "</Abbreviations>\n";
-    result += "</Abbreviations-Section>\n";
-    return result
+def listify_sign_posts(text):
+    li = [s.strip() for s in text.splitlines()]
+    root = etree.Element("sign_posts")
+    for item in li:
+        if item == "" or item == "\n":
+            continue
+        post = etree.Element("Sign-Post")
+        post.text = item
+        root.append(post)
+    return root
+        
+def generate_scenario_xml(book):
+    scenariosheet = book.worksheet("Scenarios")
+    table = scenariosheet.get_all_values()
+    df_scenarios = pd.DataFrame(table[2:], columns=table[0])
+    
+    # Build the XML tree
+    root = etree.Element("Scenarios")
+    
+    for index, row in islice(df_scenarios.iterrows(), 0, None):
+        scenario = etree.Element("Scenario")
+        
+        title = etree.Element("Title")
+        h1 = etree.Element("H1")
+        h1.text = sanitize_text(row[2])
+        title.append(h1)
+        scenario.append(title)
+        
+        subtitle = etree.Element("Subtitle")
+        h2 = etree.Element("H2")
+        h2.text =  sanitize_text(row[5])
+        subtitle.append(h2)
+        scenario.append(subtitle)
+        
+        text = etree.Element("Text")
+        text.text = sanitize_text(row[7])
+        scenario.append(text)
+        
+        #sign_posts = etree.Element("sign_posts")
+        #sign_posts.text = generate_xml_list(sanitize_text(row[9]))
+        scenario.append(listify_sign_posts(sanitize_text(row[9])))
+        
+        root.append(scenario)
+        
+    return etree.tostring(root).decode('utf-8')
 
 
-# In[27]:
+# ## Ideas
+# 
+# Generate Ideas XML from excel sheet
+# ```
+# <Ideas>
+#     <Idea>
+#         <Title>
+#             <H1>
+#             </H1>
+#         </Title>
+#         <Subtitle>
+#             <H2>
+#             </H2>
+#         </Subtitle>
+#         <Value-Proposition-Canvas>
+#             <Item>
+#             </Item>
+#             <Item>
+#             </Item>
+#         </Value-Proposition-Canvas>
+#         <Value-Proposition-Text>
+#             <Text>
+#             </Text>
+#         </Value-Proposition-Text>
+#         ...
+#         ...
+#         ...
+#     </Idea>
+#     ...
+#     ...
+# </Ideas>
+# ```  
+
+# In[55]:
 
 
-#print(generate_abbrevations(book))
+def listify_canvas(text, root_tag):
+    li = [s.strip() for s in text.splitlines()]
+    root = etree.Element(root_tag)
+    for item in li:
+        if item == "" or item == "\n":
+            continue
+        post = etree.Element("Item")
+        post.text = item
+        root.append(post)
+    return root
+
+def generate_ideas(book):
+    ideasheet = book.worksheet("Ideation")
+    table = ideasheet.get_all_values()
+    df_ideas = pd.DataFrame(table[3:])#, columns=table[3])
+    #print(df_ideas.head)
+    #df_ideas.set_index('Title',inplace=True)
+    df_ideas = df_ideas.transpose()
+    df_ideas = df_ideas[1:]
+    #print(df_ideas.shape)#['Title'])
+    # Build the XML tree
+    ideas = etree.Element("Ideas")
+    
+    for index, row in islice(df_ideas.iterrows(), 0, None):
+        if (row[0]) == "":
+            continue
+        idea = etree.Element("Idea")
+        
+        # Title
+        title = etree.Element("Title")
+        heading1 = etree.Element("H1")
+        heading1.text = row[0]
+        title.append(heading1)
+        idea.append(title)
+        
+        #subtitle
+        sub = etree.Element("Subtitle")
+        h2 = etree.Element("H2")
+        h2.text = row[1]
+        sub.append(h2)
+        idea.append(sub)
+        
+        #intro
+        intro = etree.Element("Intro")
+        text = etree.Element("Text")
+        text.text = row[2]
+        intro.append(text)
+        idea.append(intro)
+        
+        #Value Proposition_Canvas
+        #vpc = etree.Element("Value_Proposition_Canvas")
+        #text = etree.Element("text")
+        #text.text = row[4]
+        #vpc.append(listify_canvas(row[4], "Value_Proposition_Canvas"))
+        idea.append(listify_canvas(row[4], "Value_Proposition_Canvas"))
+        
+        #Value Proposition_Text
+        vpt = etree.Element("Value-Proposition-Text")
+        text = etree.Element("Text")
+        text.text = row[5]
+        vpt.append(text)
+        idea.append(vpt)        
+        
+        #Customer Relationships_Canvas
+        #crc = etree.Element("Customer_Relationships_Canvas")
+        #text = etree.Element("text")
+        #text.text = row[6]
+        #crc.append(text)
+        idea.append(listify_canvas(row[6], "Customer-Relationships-Canvas"))  
+        
+        #Customer Relationships_Text
+        crt = etree.Element("Customer-Relationships-Text")
+        text = etree.Element("Text")
+        text.text = row[7]
+        crt.append(text)
+        idea.append(crt)  
+        
+        #Channels_Canvas
+        #cc = etree.Element("Channels_Canvas")
+        #text = etree.Element("text")
+        #text.text = row[8]
+        #cc.append(text)
+        idea.append(listify_canvas(row[8], "Channels-Canvas"))
+        
+        #Channels_Text
+        ct = etree.Element("Channels-Text")
+        text = etree.Element("Text")
+        text.text = row[9]
+        ct.append(text)
+        idea.append(ct)
+        
+        #Key Resources_Canvas
+        #krc = etree.Element("Key_Resources_Canvas")
+        #text = etree.Element("text")
+        #text.text = row[10]
+        #krc.append(text)
+        idea.append(listify_canvas(row[10], "Key-Resources-Canvas"))
+        
+        #Key Resources_Text
+        krt = etree.Element("Key-Resources-Text")
+        text = etree.Element("text")
+        text.text = row[11]
+        krt.append(text)
+        idea.append(krt)
+        
+        #Key Activities_Canvas
+        #kac = etree.Element("Key_Activities_Canvas")
+        #text = etree.Element("text")
+        #text.text = row[12]
+        #kac.append(text)
+        idea.append(listify_canvas(row[12], "Key-Activities-Canvas"))
+        
+        #Key Activities_Text
+        kat = etree.Element("Key-Activities-Text")
+        text = etree.Element("Text")
+        text.text = row[13]
+        kat.append(text)
+        idea.append(kat)
+        
+        #Revenue Streams_Canvas
+        #rsc = etree.Element("Revenue_Streams_Canvas")
+        #text = etree.Element("text")
+        #text.text = row[14]
+        #rsc.append(text)
+        idea.append(listify_canvas(row[14], "Revenue-Streams-Canvas"))
+        
+        #Revenue Streams_Text
+        rst = etree.Element("Revenue-Streams-Text")
+        text = etree.Element("Text")
+        text.text = row[15]
+        rst.append(text)
+        idea.append(rst)
+        
+        #Key Partners_Canvas
+        #kpc = etree.Element("Key_Partners_Canvas")
+        #text = etree.Element("text")
+        #text.text = row[16]
+        #kpc.append(text)
+        idea.append(listify_canvas(row[16], "Key-Partners-Canvas"))
+        
+        #Key Partners_Text
+        kpt = etree.Element("Key-Partners-Text")
+        text = etree.Element("Text")
+        text.text = row[17]
+        kpt.append(text)
+        idea.append(kpt)
+        
+        #Customer Segmentation_Canvas
+        #csc = etree.Element("Customer_Segmentation_Canvas")
+        #text = etree.Element("text")
+        #text.text = row[18]
+        #csc.append(text)
+        idea.append(listify_canvas(row[18], "Customer-Segmentation-Canvas"))
+        
+        #Customer Segmentation_Text
+        cst = etree.Element("Customer-Segmentation-Text")
+        text = etree.Element("Text")
+        text.text = row[19]
+        cst.append(text)
+        idea.append(cst)
+        
+        #Cost Structure_Canvas
+        #csc = etree.Element("Cost Structure_Canvas")
+        #text = etree.Element("text")
+        #text.text = row[20]
+        #csc.append(text)
+        idea.append(listify_canvas(row[20], "Cost-Structure-Canvas"))
+        
+        #Cost Structure_Text
+        cst = etree.Element("Cost-Structure-Text")
+        text = etree.Element("Text")
+        text.text = row[21]
+        cst.append(text)
+        idea.append(cst)
+        
+        #Senario Fit_1
+        sf = etree.Element("Senario-Fit-1")
+        text = etree.Element("Text")
+        text.text = row[23]
+        sf.append(text)
+        idea.append(sf)
+        
+        #Senario Fit_2
+        sf = etree.Element("Senario-Fit-2")
+        text = etree.Element("Text")
+        text.text = row[24]
+        sf.append(text)
+        idea.append(sf)
+        
+        #Senario Fit_3
+        sf = etree.Element("Senario-Fit-3")
+        text = etree.Element("Text")
+        text.text = row[25]
+        sf.append(text)
+        idea.append(sf)
+        
+        #Senario Fit_4
+        sf = etree.Element("Senario-Fit-4")
+        text = etree.Element("Text")
+        text.text = row[26]
+        sf.append(text)
+        idea.append(sf)
+        
+        
+        
+        ideas.append(idea)
+        # print(row[0])
+        
+    return etree.tostring(ideas).decode('utf-8')
+
+
+# In[56]:
+
+
+# print(generate_abbrevations(book))
 
 
 # ## Trends
@@ -259,7 +554,7 @@ def generate_abbrevations(book):
 # </Abbreviations>
 # ```
 
-# In[28]:
+# In[57]:
 
 
 def generate_trends(book):
@@ -364,6 +659,44 @@ def generate_trends(book):
     return result  
 
 
+# ## Abbrevations
+# 
+# Generate the abbrevations from the sheet and transform it into the XML structure
+# 
+# ```
+# <Abbreviations>
+# <Abbreviation><H6>AI</H6>Artificial Intelligence</Abbreviation>
+# <Abbreviation><H6>BIM</H6>Building information modeling</Abbreviation>
+# <Abbreviation><H6>LCC</H6>Life Cycle Costing</Abbreviation>
+# ...
+# </Abbreviations>
+# ```
+
+# In[58]:
+
+
+def generate_abbrevations(book):
+    worksheet = book.worksheet("Abreviations")
+    table = worksheet.get_all_values()
+    ##Convert table data into a dataframe
+    df = pd.DataFrame(table[1:], columns=table[0])
+    # Init XML structure
+    result = "<Abbreviations-Section>\n";
+    result += "<H1>"+ABBREVIATION_TITLE+"</H1>\n";
+    result += "<Abbreviations>\n";
+    # Iterate over the rows
+    for index, row in islice(df.iterrows(), 1, None):
+        # Grab the key and values
+        key = sanitize_text(row[0])
+        val = sanitize_text(row[1])
+        # Create a xml string
+        result += "<Abbreviation><"+ABBREVIATION_HEADLINE_TAG+">" + key + "</"+ABBREVIATION_HEADLINE_TAG+">" + val + "</Abbreviation>\n"
+    # Add closing tag
+    result += "</Abbreviations>\n";
+    result += "</Abbreviations-Section>\n";
+    return result
+
+
 # ## Sources
 # 
 # Generate the sources from the sheet and transform it into the XML structure.
@@ -381,7 +714,7 @@ def generate_trends(book):
 # </Sources-Section>
 # ```
 
-# In[29]:
+# In[59]:
 
 
 def generate_sources(book, map_hash_source):
@@ -418,8 +751,7 @@ def generate_sources(book, map_hash_source):
         
     # Iterate of the ordered source array and genrate the xml
     for index, (source, responsible) in enumerate(sources):
-        
-        if (len(source) == 0):            
+        if (len(source) == 0):
             print("Source not declared", map_number_hash[index+1])
         else:
             result += '<Source responsible="'+responsible+'">\n'
@@ -435,7 +767,9 @@ def generate_sources(book, map_hash_source):
     return result
 
 
-# In[30]:
+# # Run the pipeline
+
+# In[60]:
 
 
 def run():
@@ -446,21 +780,22 @@ def run():
     # Add Trends
     xml += generate_trends(book)
     # Add Scenarios
+    xml += generate_ideas(book)
     # Add Ideation
+    xml += generate_ideas(book)
     # Add Sources    
-
-
     # Replace the citation
     xml, authors = find_author_and_replace(xml)
+    print(authors)
     xml += generate_sources(book, authors)
     # Wrap the root object arround all
     xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Root>\n' + xml + '</Root>'
-    #print(xml)
+    # print(xml)
     return xml
 
 
-# In[31]:
+# In[61]:
 
 
-#run()
+run()
 
