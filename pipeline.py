@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[43]:
+# In[1]:
 
 
 from __future__ import print_function
@@ -32,7 +32,7 @@ from lxml import etree
 # 
 # ## Headlines
 
-# In[44]:
+# In[2]:
 
 
 # Abbreviations-Section
@@ -62,7 +62,7 @@ SOURCES_KEY_TAG = "H6"
 
 # ## 1.1. Text formatation
 
-# In[45]:
+# In[3]:
 
 
 def sanitize_text(text):
@@ -70,7 +70,7 @@ def sanitize_text(text):
     return text
 
 
-# In[46]:
+# In[4]:
 
 
 def sanitize_text_test():
@@ -80,7 +80,7 @@ def sanitize_text_test():
     
 
 
-# In[47]:
+# In[5]:
 
 
 def generate_xml_list(text):
@@ -93,7 +93,7 @@ def generate_xml_list(text):
     return result
 
 
-# In[48]:
+# In[6]:
 
 
 def generate_xml_list_test():
@@ -104,7 +104,7 @@ def generate_xml_list_test():
 
 # ## 1.2. Find and replace author
 
-# In[49]:
+# In[7]:
 
 
 def find_author_and_replace(text):    
@@ -125,7 +125,7 @@ def find_author_and_replace(text):
     return (text, authors)
 
 
-# In[50]:
+# In[8]:
 
 
 def find_author_and_replace_test():
@@ -142,7 +142,7 @@ find_author_and_replace_test()
 
 # http://www.countingcalculi.com/explanations/google_sheets_and_jupyter_notebooks/
 
-# In[51]:
+# In[9]:
 
 
 # If modifying these scopes, delete the file token.json.
@@ -153,7 +153,7 @@ SPREADSHEET_ID = '16jza4slLRK4Fe3-O_f410P_-WZBe5EN-fmq_OW3HJNQ'
 RANGE_NAME = 'Trends'
 
 
-# In[52]:
+# In[10]:
 
 
 def load_data_from_google_sheets():
@@ -166,14 +166,161 @@ def load_data_from_google_sheets():
     return book
 
 
-# In[53]:
+# In[11]:
 
 
-book = load_data_from_google_sheets();
+book = load_data_from_google_sheets()
 # print(book)
 
 
 # # XML
+
+# ## Trends
+# 
+# Generate the trends from the sheet and transform it into the XML structure
+# 
+# ```
+# <Trends-Section>
+# <List>
+# <List-Element>Technology Trends</List-Element>
+# <List-Element>Societal &amp; Environmental Trends</List-Element>
+# </List>
+# <Trends-Sub-Sections>
+# <Trends-Sub-Section>
+# <H1>AI</H1>
+# <H3>SUBRTITLE</H3>
+# <Text>Intro text for bla bla</Text>
+# <Trends>
+# <Trend>
+# <H2>Trend 1 Title</H2>
+# <H3>Slogan</H3>
+# <Text>
+# Intro text
+# <H4>Facts</H4>
+# <List>
+# <List-Element>Hello World</List-Element>
+# <List-Element>Hello CDTM!</List-Element>
+# <List-Element>Hello Sebastian</List-Element>
+# ...
+# </List>
+# </Text>
+# </Trend>
+# </Trends>
+# </Trends-Sub-Section>
+# ...
+# </Trends-Sub-Sections>
+# 
+# 
+# <Abbreviation><H6>BIM</H6>Building information modeling</Abbreviation>
+# <Abbreviation><H6>LCC</H6>Life Cycle Costing</Abbreviation>
+# ...
+# </Abbreviations>
+# ```
+
+# In[12]:
+
+
+def generate_trends(book):
+    # Init XML structure
+    result = "<Trends-Section>\n";
+    result += "<H1>"+TRENDS_TITLE+"</H1>\n";
+    # Add description if necessary
+    if len(TRENDS_DESCRIPTION) > 0:
+        result += "<Text>"+TRENDS_DESCRIPTION+"</Text>\n";
+    
+    # Init list of trend sections
+    result_trend_list = "<List>\n"
+    
+    # Load trends
+    # Trends_intro
+    worksheet = book.worksheet("Trend_Intro")
+    table = worksheet.get_all_values()
+    ##Convert table data into a dataframe
+    df_trends_intro = pd.DataFrame(table[1:], columns=table[0])
+    # print(df_trends_intro)
+
+    worksheet = book.worksheet("Trends")
+    table = worksheet.get_all_values()
+    # Convert table data into a dataframe
+    df_trends = pd.DataFrame(table[2:], columns=table[0])
+    # print(df_trends)
+    
+    # Start with sub sections
+    result_sub_sections = "<Trends-Sub-Sections>\n"
+    # Iterate over the trend intro
+    for index, row in islice(df_trends_intro.iterrows(), 0, None):
+        # Grab the key and values
+        key = sanitize_text(row[3])
+        intro_text = sanitize_text(row[4])
+        intro_responsible = sanitize_text(row[2])
+        
+        # Init the trend sub section
+        result_trend_sub_section = '<Trends-Sub-Section title="'+key+'">\n';
+        
+        result_trend_sub_section += "<H1>"+ key + "</H1>\n"
+        result_trend_sub_section += '<Text responsible="'+intro_responsible+'">'+ intro_text + "</Text>\n"
+        
+        # Add the trend to the overview list
+        result_trend_list += "<List-Element>" + key + "</List-Element>\n"
+        
+        # Start adding the trends
+        result_trend_sub_section += '<Trends>\n'
+        
+        for trend_index, trend_row in df_trends.loc[df_trends['Sub-Section'] == row[3]].iterrows():
+            trend_title = sanitize_text(trend_row[2])
+            trend_slogan = sanitize_text(trend_row[7])
+            trend_intro = sanitize_text(trend_row[9])
+            trend_facts = sanitize_text(trend_row[11])
+            trend_drivers = sanitize_text(trend_row[13])
+            trend_challanges = sanitize_text(trend_row[15])
+            trend_impact = sanitize_text(trend_row[17])
+            trend_responsible = sanitize_text(trend_row[5])
+            
+            result_trend = '<Trend responsible="'+trend_responsible+'">\n'            
+            
+            result_trend += "<"+TRENDS_SUB_SECTION_HEADLINE_TAG+">" + trend_title + "</"+TRENDS_SUB_SECTION_HEADLINE_TAG+">\n"
+            result_trend += "<"+TRENDS_SUB_SECTION_SLOGAN_TAG+">" + trend_slogan + "</"+TRENDS_SUB_SECTION_SLOGAN_TAG+">\n"
+            result_trend += "<Text>\n"
+            # Trend intro
+            result_trend += trend_intro + "\n"
+            # Trend Facts
+            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"Facts:"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
+            result_trend += generate_xml_list(trend_facts) +"\n"
+            # Trend Key Drivers
+            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"Key Drivers:"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
+            result_trend += generate_xml_list(trend_drivers) +"\n"
+            # Trend Challenges
+            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"Challenges:"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
+            result_trend += generate_xml_list(trend_challanges) +"\n"
+            # Trend Impact Headline
+            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+TRENDS_SUB_SECTION_AREA_IMPACT_HEADLINE +":"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
+            result_trend += generate_xml_list(trend_impact) +"\n"
+            # Trend Impact Text
+            result_trend += "</Text>\n"
+            result_trend += "</Trend>\n"
+            result_trend_sub_section += result_trend
+        
+        # Close the trend section
+        result_trend_sub_section += '</Trends>\n'
+    
+        
+    
+        # Close the trend sub section
+        result_trend_sub_section += "</Trends-Sub-Section>\n";
+
+        # Add it to the result
+        result_sub_sections += result_trend_sub_section;
+
+    result_sub_sections += "</Trends-Sub-Sections>"
+    
+    result_trend_list += "</List>"
+    
+    # Add the elements to the result object
+    result += result_trend_list + "\n"
+    result += result_sub_sections + "\n"
+    result += "</Trends-Section>\n";
+    return result  
+
 
 # ## Scenarios
 # 
@@ -209,7 +356,7 @@ book = load_data_from_google_sheets();
 # </Scenarios>
 # ```
 
-# In[54]:
+# In[20]:
 
 
 def listify_sign_posts(text):
@@ -227,6 +374,23 @@ def generate_scenario_xml(book):
     scenariosheet = book.worksheet("Scenarios")
     table = scenariosheet.get_all_values()
     df_scenarios = pd.DataFrame(table[2:], columns=table[0])
+    
+    # Section
+    scenarios_section = etree.Element("Scenarios-Section")
+    
+    # Add headline
+    h1 = etree.Element("H1")
+    h1.text = "Scenarios"
+    scenarios_section.append(h1)
+    
+    # Add scenarios list
+    scenarios_list = etree.Element("List")
+    for index, row in islice(df_scenarios.iterrows(), 0, None):        
+        scenarios_list_element = etree.Element("List-Element")
+        scenarios_list_element.text = sanitize_text(row[2])
+        scenarios_list.append(scenarios_list_element)
+
+    scenarios_section.append(scenarios_list)
     
     # Build the XML tree
     root = etree.Element("Scenarios")
@@ -256,7 +420,9 @@ def generate_scenario_xml(book):
         
         root.append(scenario)
         
-    return etree.tostring(root).decode('utf-8')
+        scenarios_section.append(root)
+        
+    return etree.tostring(scenarios_section, encoding="unicode", method='xml')
 
 
 # ## Ideas
@@ -292,7 +458,7 @@ def generate_scenario_xml(book):
 # </Ideas>
 # ```  
 
-# In[55]:
+# In[14]:
 
 
 def listify_canvas(text, root_tag):
@@ -316,7 +482,25 @@ def generate_ideas(book):
     df_ideas = df_ideas[1:]
     #print(df_ideas.shape)#['Title'])
     # Build the XML tree
-    ideas = etree.Element("Ideas")
+    ideas_section = etree.Element("Ideas-Section")
+    
+    # Add headline
+    h1 = etree.Element("H1")
+    h1.text = "Ideas"
+    ideas_section.append(h1)
+    
+    # Add ideas list
+    ideas_list = etree.Element("List")
+    for index, row in islice(df_ideas.iterrows(), 0, None):        
+        ideas_list_element = etree.Element("List-Element")
+        ideas_list_element.text = row[0]
+        ideas_list.append(ideas_list_element)
+    
+    
+    ideas_section.append(ideas_list)
+    
+    # Ideas
+    ideas = etree.Element("Ideas")   
     
     for index, row in islice(df_ideas.iterrows(), 0, None):
         if (row[0]) == "":
@@ -503,160 +687,15 @@ def generate_ideas(book):
         ideas.append(idea)
         # print(row[0])
         
-    return etree.tostring(ideas).decode('utf-8')
+        ideas_section.append(ideas)
+        
+    return etree.tostring(ideas_section, encoding="unicode", method='xml')
 
 
-# In[56]:
+# In[15]:
 
 
 # print(generate_abbrevations(book))
-
-
-# ## Trends
-# 
-# Generate the trends from the sheet and transform it into the XML structure
-# 
-# ```
-# <Trends-Section>
-# <List>
-# <List-Element>Technology Trends</List-Element>
-# <List-Element>Societal &amp; Environmental Trends</List-Element>
-# </List>
-# <Trends-Sub-Sections>
-# <Trends-Sub-Section>
-# <H1>AI</H1>
-# <H3>SUBRTITLE</H3>
-# <Text>Intro text for bla bla</Text>
-# <Trends>
-# <Trend>
-# <H2>Trend 1 Title</H2>
-# <H3>Slogan</H3>
-# <Text>
-# Intro text
-# <H4>Facts</H4>
-# <List>
-# <List-Element>Hello World</List-Element>
-# <List-Element>Hello CDTM!</List-Element>
-# <List-Element>Hello Sebastian</List-Element>
-# ...
-# </List>
-# </Text>
-# </Trend>
-# </Trends>
-# </Trends-Sub-Section>
-# ...
-# </Trends-Sub-Sections>
-# 
-# 
-# <Abbreviation><H6>BIM</H6>Building information modeling</Abbreviation>
-# <Abbreviation><H6>LCC</H6>Life Cycle Costing</Abbreviation>
-# ...
-# </Abbreviations>
-# ```
-
-# In[57]:
-
-
-def generate_trends(book):
-    # Init XML structure
-    result = "<Trends-Section>\n";
-    result += "<H1>"+TRENDS_TITLE+"</H1>\n";
-    # Add description if necessary
-    if len(TRENDS_DESCRIPTION) > 0:
-        result += "<Text>"+TRENDS_DESCRIPTION+"</Text>\n";
-    
-    # Init list of trend sections
-    result_trend_list = "<List>\n"
-    
-    # Load trends
-    # Trends_intro
-    worksheet = book.worksheet("Trend_Intro")
-    table = worksheet.get_all_values()
-    ##Convert table data into a dataframe
-    df_trends_intro = pd.DataFrame(table[1:], columns=table[0])
-    # print(df_trends_intro)
-
-    worksheet = book.worksheet("Trends")
-    table = worksheet.get_all_values()
-    # Convert table data into a dataframe
-    df_trends = pd.DataFrame(table[2:], columns=table[0])
-    # print(df_trends)
-    
-    # Start with sub sections
-    result_sub_sections = "<Trends-Sub-Sections>\n"
-    # Iterate over the trend intro
-    for index, row in islice(df_trends_intro.iterrows(), 0, None):
-        # Grab the key and values
-        key = sanitize_text(row[3])
-        intro_text = sanitize_text(row[4])
-        intro_responsible = sanitize_text(row[2])
-        
-        # Init the trend sub section
-        result_trend_sub_section = '<Trends-Sub-Section title="'+key+'">\n';
-        
-        result_trend_sub_section += "<H1>"+ key + "</H1>\n"
-        result_trend_sub_section += '<Text responsible="'+intro_responsible+'">'+ intro_text + "</Text>\n"
-        
-        # Add the trend to the overview list
-        result_trend_list += "<List-Element>" + key + "</List-Element>\n"
-        
-        # Start adding the trends
-        result_trend_sub_section += '<Trends>\n'
-        
-        for trend_index, trend_row in df_trends.loc[df_trends['Sub-Section'] == row[3]].iterrows():
-            trend_title = sanitize_text(trend_row[2])
-            trend_slogan = sanitize_text(trend_row[7])
-            trend_intro = sanitize_text(trend_row[9])
-            trend_facts = sanitize_text(trend_row[11])
-            trend_drivers = sanitize_text(trend_row[13])
-            trend_challanges = sanitize_text(trend_row[15])
-            trend_impact = sanitize_text(trend_row[17])
-            trend_responsible = sanitize_text(trend_row[5])
-            
-            result_trend = '<Trend responsible="'+trend_responsible+'">\n'            
-            
-            result_trend += "<"+TRENDS_SUB_SECTION_HEADLINE_TAG+">" + trend_title + "</"+TRENDS_SUB_SECTION_HEADLINE_TAG+">\n"
-            result_trend += "<"+TRENDS_SUB_SECTION_SLOGAN_TAG+">" + trend_slogan + "</"+TRENDS_SUB_SECTION_SLOGAN_TAG+">\n"
-            result_trend += "<Text>\n"
-            # Trend intro
-            result_trend += trend_intro + "\n"
-            # Trend Facts
-            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"Facts:"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
-            result_trend += generate_xml_list(trend_facts) +"\n"
-            # Trend Key Drivers
-            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"Key Drivers:"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
-            result_trend += generate_xml_list(trend_drivers) +"\n"
-            # Trend Challenges
-            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"Challenges:"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
-            result_trend += generate_xml_list(trend_challanges) +"\n"
-            # Trend Impact Headline
-            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+TRENDS_SUB_SECTION_AREA_IMPACT_HEADLINE +":"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
-            result_trend += generate_xml_list(trend_impact) +"\n"
-            # Trend Impact Text
-            result_trend += "</Text>\n"
-            result_trend += "</Trend>\n"
-            result_trend_sub_section += result_trend
-        
-        # Close the trend section
-        result_trend_sub_section += '</Trends>\n'
-    
-        
-    
-        # Close the trend sub section
-        result_trend_sub_section += "</Trends-Sub-Section>\n";
-
-        # Add it to the result
-        result_sub_sections += result_trend_sub_section;
-
-    result_sub_sections += "</Trends-Sub-Sections>"
-    
-    result_trend_list += "</List>"
-    
-    # Add the elements to the result object
-    result += result_trend_list + "\n"
-    result += result_sub_sections + "\n"
-    result += "</Trends-Section>\n";
-    return result  
 
 
 # ## Abbrevations
@@ -672,7 +711,7 @@ def generate_trends(book):
 # </Abbreviations>
 # ```
 
-# In[58]:
+# In[16]:
 
 
 def generate_abbrevations(book):
@@ -714,7 +753,7 @@ def generate_abbrevations(book):
 # </Sources-Section>
 # ```
 
-# In[62]:
+# In[17]:
 
 
 def generate_sources(book, map_hash_source):
@@ -780,7 +819,7 @@ def generate_sources(book, map_hash_source):
 
 # # Run the pipeline
 
-# In[63]:
+# In[18]:
 
 
 def run():
@@ -791,7 +830,7 @@ def run():
     # Add Trends
     xml += generate_trends(book)
     # Add Scenarios
-    xml += generate_ideas(book)
+    xml += generate_scenario_xml(book)
     # Add Ideation
     xml += generate_ideas(book)
     # Add Sources    
@@ -806,8 +845,14 @@ def run():
     return xml, errors
 
 
-# In[64]:
+# In[21]:
 
 
-# run()
+#xml, err = run()
+
+
+# In[ ]:
+
+
+# xml
 
