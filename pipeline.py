@@ -34,6 +34,7 @@ from lxml import etree
 
 # In[2]:
 
+BULLET_ICON = "•" # List icon for Trend Drivers, Trend Facts ...
 
 # Abbreviations-Section
 ABBREVIATION_TITLE = "List of Abbrevations"
@@ -361,7 +362,7 @@ def generate_trends(book):
 
 def listify_sign_posts(text):
     li = [s.strip() for s in text.splitlines()]
-    root = etree.Element("sign_posts")
+    root = etree.Element("Sign-Posts")
     for item in li:
         if item == "" or item == "\n":
             continue
@@ -464,12 +465,14 @@ def generate_scenario_xml(book):
 def listify_canvas(text, root_tag):
     li = [s.strip() for s in text.splitlines()]
     root = etree.Element(root_tag)
+    root_list = etree.Element("List")
     for item in li:
         if item == "" or item == "\n":
             continue
-        post = etree.Element("Item")
-        post.text = item
-        root.append(post)
+        post = etree.Element("List-Element")
+        post.text = BULLET_ICON + " " + item
+        root_list.append(post)
+    root.append(root_list)
     return root
 
 def generate_ideas(book):
@@ -533,7 +536,7 @@ def generate_ideas(book):
         #text = etree.Element("text")
         #text.text = row[4]
         #vpc.append(listify_canvas(row[4], "Value_Proposition_Canvas"))
-        idea.append(listify_canvas(row[4], "Value_Proposition_Canvas"))
+        idea.append(listify_canvas(row[4], "Value-Proposition-Canvas"))
         
         #Value Proposition_Text
         vpt = etree.Element("Value-Proposition-Text")
