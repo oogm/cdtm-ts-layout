@@ -10,7 +10,7 @@ app = Flask(__name__)
 @app.route("/")
 def start():
     # create response
-    errors, result = run()
+    result, errors = run()
     response = make_response(result)
     # filename
     time_file_name = time.strftime("%Y-%m-%d-%H-%M-%S")
@@ -24,6 +24,10 @@ def start():
 @app.route("/sources")
 def sources():
     # create response
-    errors, result = run()
+    result, errors = run()
     # return response
     return jsonify(errors)
+
+    # For local debugging
+    # if __name__ == '__main__':
+    #    app.run(debug=True)
