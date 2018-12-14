@@ -1,4 +1,3 @@
-
 # coding: utf-8
 
 # In[1]:
@@ -14,7 +13,6 @@ import pandas as pd
 from itertools import islice
 import re
 from lxml import etree
-
 
 # # Key takeaways
 # 
@@ -35,7 +33,7 @@ from lxml import etree
 # In[2]:
 
 
-BULLET_ICON = "" # e.g. "•"
+BULLET_ICON = ""  # e.g. "•"
 
 # Abbreviations-Section
 ABBREVIATION_TITLE = "List of Abbrevations"
@@ -46,7 +44,7 @@ TRENDS_TITLE = "Trends"
 TRENDS_DESCRIPTION = ""
 TRENDS_SUB_SECTION_HEADLINE_TAG = "H2"
 TRENDS_SUB_SECTION_SLOGAN_TAG = "H3"
-TRENDS_SUB_SECTION_AREA_HEADLINE_TAG = "H4" # Trend Drivers, Trend Facts ... 
+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG = "H4"  # Trend Drivers, Trend Facts ...
 TRENDS_SUB_SECTION_AREA_IMPACT_HEADLINE = "Impact on the construction industry"
 
 # Sources-Section
@@ -77,8 +75,9 @@ def sanitize_text(text):
 def sanitize_text_test():
     print(sanitize_text("Hello & World") == "Hello &amp; World")
 
-#sanitize_text_test()
-    
+
+# sanitize_text_test()
+
 
 
 # In[5]:
@@ -99,8 +98,9 @@ def generate_xml_list(text):
 
 def generate_xml_list_test():
     print(generate_xml_list("Hello World \n hello / Seb \n hello CDTM\n"))
-    
-#generate_xml_list_test()
+
+
+# generate_xml_list_test()
 
 
 # ## 1.2. Find and replace author
@@ -108,7 +108,7 @@ def generate_xml_list_test():
 # In[7]:
 
 
-def find_author_and_replace(text):    
+def find_author_and_replace(text):
     counter = 0
     authors = dict()
     p = re.compile("\[([a-zäöüÄÖÜA-Z_0-9]*)")
@@ -117,12 +117,12 @@ def find_author_and_replace(text):
         if key not in authors and len(key) > 0:
             counter += 1
             authors[key] = counter
-    
+
     # print(authors)
-            
+
     for key, value in authors.items():
-        text = text.replace("["+str(key), "["+str(value))
-        
+        text = text.replace("[" + str(key), "[" + str(value))
+
     return (text, authors)
 
 
@@ -132,12 +132,11 @@ def find_author_and_replace(text):
 def find_author_and_replace_test():
     test = "The side bar include [] [KRAUZ, p.22] a Cheatsheet, full [KRAUZ] Reference, sults with the Tools below [SEB], [KAYA]. Replace & List outp [HASE]. [KRAUZ] [KRAUZ] [KRAUZ] [KRAUZ]"
     text, authors = find_author_and_replace(test)
-    #print(text)
-    #print(authors)
+    # print(text)
+    # print(authors)
 
-    
+
 find_author_and_replace_test()
-
 
 # ## Download the data from the spreadsheet
 
@@ -162,7 +161,7 @@ def load_data_from_google_sheets():
     credentials = ServiceAccountCredentials.from_json_keyfile_name('./credentials.json', scope)
     # print(credentials)
     gc = gspread.authorize(credentials)
-    
+
     book = gc.open_by_key(SPREADSHEET_ID)
     return book
 
@@ -171,6 +170,8 @@ def load_data_from_google_sheets():
 
 
 book = load_data_from_google_sheets()
+
+
 # print(book)
 
 
@@ -224,14 +225,14 @@ book = load_data_from_google_sheets()
 def generate_trends(book):
     # Init XML structure
     result = "<Trends-Section>\n";
-    result += "<H1>"+TRENDS_TITLE+"</H1>\n";
+    result += "<H1>" + TRENDS_TITLE + "</H1>\n";
     # Add description if necessary
     if len(TRENDS_DESCRIPTION) > 0:
-        result += "<Text>"+TRENDS_DESCRIPTION+"</Text>\n";
-    
+        result += "<Text>" + TRENDS_DESCRIPTION + "</Text>\n";
+
     # Init list of trend sections
     result_trend_list = "<List>\n"
-    
+
     # Load trends
     # Trends_intro
     worksheet = book.worksheet("Trend_Intro")
@@ -245,7 +246,7 @@ def generate_trends(book):
     # Convert table data into a dataframe
     df_trends = pd.DataFrame(table[2:], columns=table[0])
     # print(df_trends)
-    
+
     # Start with sub sections
     result_sub_sections = "<Trends-Sub-Sections>\n"
     # Iterate over the trend intro
@@ -254,19 +255,19 @@ def generate_trends(book):
         key = sanitize_text(row[3])
         intro_text = sanitize_text(row[4])
         intro_responsible = sanitize_text(row[2])
-        
+
         # Init the trend sub section
-        result_trend_sub_section = '<Trends-Sub-Section title="'+key+'">\n';
-        
-        result_trend_sub_section += "<H1>"+ key + "</H1>\n"
-        result_trend_sub_section += '<Text responsible="'+intro_responsible+'">'+ intro_text + "</Text>\n"
-        
+        result_trend_sub_section = '<Trends-Sub-Section title="' + key + '">\n';
+
+        result_trend_sub_section += "<H1>" + key + "</H1>\n"
+        result_trend_sub_section += '<Text responsible="' + intro_responsible + '">' + intro_text + "</Text>\n"
+
         # Add the trend to the overview list
         result_trend_list += "<List-Element>" + key + "</List-Element>\n"
-        
+
         # Start adding the trends
         result_trend_sub_section += '<Trends>\n'
-        
+
         for trend_index, trend_row in df_trends.loc[df_trends['Sub-Section'] == row[3]].iterrows():
             trend_title = sanitize_text(trend_row[2])
             trend_slogan = sanitize_text(trend_row[7])
@@ -276,36 +277,34 @@ def generate_trends(book):
             trend_challanges = sanitize_text(trend_row[15])
             trend_impact = sanitize_text(trend_row[17])
             trend_responsible = sanitize_text(trend_row[5])
-            
-            result_trend = '<Trend responsible="'+trend_responsible+'">\n'            
-            
-            result_trend += "<"+TRENDS_SUB_SECTION_HEADLINE_TAG+">" + trend_title + "</"+TRENDS_SUB_SECTION_HEADLINE_TAG+">\n"
-            result_trend += "<"+TRENDS_SUB_SECTION_SLOGAN_TAG+">" + trend_slogan + "</"+TRENDS_SUB_SECTION_SLOGAN_TAG+">\n"
+
+            result_trend = '<Trend responsible="' + trend_responsible + '">\n'
+
+            result_trend += "<" + TRENDS_SUB_SECTION_HEADLINE_TAG + ">" + trend_title + "</" + TRENDS_SUB_SECTION_HEADLINE_TAG + ">\n"
+            result_trend += "<" + TRENDS_SUB_SECTION_SLOGAN_TAG + ">" + trend_slogan + "</" + TRENDS_SUB_SECTION_SLOGAN_TAG + ">\n"
             result_trend += "<Text>\n"
             # Trend intro
             result_trend += trend_intro + "\n"
             # Trend Facts
-            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"Facts:"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
-            result_trend += generate_xml_list(trend_facts) +"\n"
+            result_trend += "<" + TRENDS_SUB_SECTION_AREA_HEADLINE_TAG + ">" + "Facts:" + "</" + TRENDS_SUB_SECTION_AREA_HEADLINE_TAG + ">" + "\n"
+            result_trend += generate_xml_list(trend_facts) + "\n"
             # Trend Key Drivers
-            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"Key Drivers:"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
-            result_trend += generate_xml_list(trend_drivers) +"\n"
+            result_trend += "<" + TRENDS_SUB_SECTION_AREA_HEADLINE_TAG + ">" + "Key Drivers:" + "</" + TRENDS_SUB_SECTION_AREA_HEADLINE_TAG + ">" + "\n"
+            result_trend += generate_xml_list(trend_drivers) + "\n"
             # Trend Challenges
-            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"Challenges:"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
-            result_trend += generate_xml_list(trend_challanges) +"\n"
+            result_trend += "<" + TRENDS_SUB_SECTION_AREA_HEADLINE_TAG + ">" + "Challenges:" + "</" + TRENDS_SUB_SECTION_AREA_HEADLINE_TAG + ">" + "\n"
+            result_trend += generate_xml_list(trend_challanges) + "\n"
             # Trend Impact Headline
-            result_trend += "<"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+TRENDS_SUB_SECTION_AREA_IMPACT_HEADLINE +":"+"</"+TRENDS_SUB_SECTION_AREA_HEADLINE_TAG+">"+"\n"
-            result_trend += generate_xml_list(trend_impact) +"\n"
+            result_trend += "<" + TRENDS_SUB_SECTION_AREA_HEADLINE_TAG + ">" + TRENDS_SUB_SECTION_AREA_IMPACT_HEADLINE + ":" + "</" + TRENDS_SUB_SECTION_AREA_HEADLINE_TAG + ">" + "\n"
+            result_trend += "<Text>" + trend_impact + "</Text>\n"
             # Trend Impact Text
             result_trend += "</Text>\n"
             result_trend += "</Trend>\n"
             result_trend_sub_section += result_trend
-        
+
         # Close the trend section
         result_trend_sub_section += '</Trends>\n'
-    
-        
-    
+
         # Close the trend sub section
         result_trend_sub_section += "</Trends-Sub-Section>\n";
 
@@ -313,14 +312,14 @@ def generate_trends(book):
         result_sub_sections += result_trend_sub_section;
 
     result_sub_sections += "</Trends-Sub-Sections>"
-    
+
     result_trend_list += "</List>"
-    
+
     # Add the elements to the result object
     result += result_trend_list + "\n"
     result += result_sub_sections + "\n"
     result += "</Trends-Section>\n";
-    return result  
+    return result
 
 
 # ## Scenarios
@@ -370,59 +369,60 @@ def listify_sign_posts(text):
         post.text = item
         root.append(post)
     return root
-        
+
+
 def generate_scenario_xml(book):
     scenariosheet = book.worksheet("Scenarios")
     table = scenariosheet.get_all_values()
     df_scenarios = pd.DataFrame(table[2:], columns=table[0])
-    
+
     # Section
     scenarios_section = etree.Element("Scenarios-Section")
-    
+
     # Add headline
     h1 = etree.Element("H1")
     h1.text = "Scenarios"
     scenarios_section.append(h1)
-    
+
     # Add scenarios list
     scenarios_list = etree.Element("List")
-    for index, row in islice(df_scenarios.iterrows(), 0, None):        
+    for index, row in islice(df_scenarios.iterrows(), 0, None):
         scenarios_list_element = etree.Element("List-Element")
         scenarios_list_element.text = sanitize_text(row[2])
         scenarios_list.append(scenarios_list_element)
-    
+
     scenarios_section.append(scenarios_list)
-    
+
     # Build the XML tree
     root = etree.Element("Scenarios")
-    
+
     for index, row in islice(df_scenarios.iterrows(), 0, None):
         scenario = etree.Element("Scenario")
-        
+
         title = etree.Element("Title")
         h1 = etree.Element("H1")
         h1.text = sanitize_text(row[2])
         title.append(h1)
         scenario.append(title)
-        
+
         subtitle = etree.Element("Subtitle")
         h2 = etree.Element("H2")
-        h2.text =  sanitize_text(row[5])
+        h2.text = sanitize_text(row[5])
         subtitle.append(h2)
         scenario.append(subtitle)
-        
+
         text = etree.Element("Text")
         text.text = sanitize_text(row[7])
         scenario.append(text)
-        
-        #sign_posts = etree.Element("sign_posts")
-        #sign_posts.text = generate_xml_list(sanitize_text(row[9]))
+
+        # sign_posts = etree.Element("sign_posts")
+        # sign_posts.text = generate_xml_list(sanitize_text(row[9]))
         scenario.append(listify_sign_posts(sanitize_text(row[9])))
-        
+
         root.append(scenario)
-        
+
         scenarios_section.append(root)
-        
+
     return etree.tostring(scenarios_section, encoding="unicode", method='xml')
 
 
@@ -475,223 +475,221 @@ def listify_canvas(text, root_tag):
     root.append(root_list)
     return root
 
+
 def generate_ideas(book):
     ideasheet = book.worksheet("Ideation")
     table = ideasheet.get_all_values()
-    df_ideas = pd.DataFrame(table[3:])#, columns=table[3])
-    #print(df_ideas.head)
-    #df_ideas.set_index('Title',inplace=True)
+    df_ideas = pd.DataFrame(table[3:])  # , columns=table[3])
+    # print(df_ideas.head)
+    # df_ideas.set_index('Title',inplace=True)
     df_ideas = df_ideas.transpose()
     df_ideas = df_ideas[1:]
-    #print(df_ideas.shape)#['Title'])
+    # print(df_ideas.shape)#['Title'])
     # Build the XML tree
     ideas_section = etree.Element("Ideas-Section")
-    
+
     # Add headline
     h1 = etree.Element("H1")
     h1.text = "Ideas"
     ideas_section.append(h1)
-    
+
     # Add ideas list
     ideas_list = etree.Element("List")
-    for index, row in islice(df_ideas.iterrows(), 0, None):        
+    for index, row in islice(df_ideas.iterrows(), 0, None):
         ideas_list_element = etree.Element("List-Element")
         ideas_list_element.text = row[0]
         ideas_list.append(ideas_list_element)
-    
-    
+
     ideas_section.append(ideas_list)
-    
+
     # Ideas
-    ideas = etree.Element("Ideas")   
-    
+    ideas = etree.Element("Ideas")
+
     for index, row in islice(df_ideas.iterrows(), 0, None):
         if (row[0]) == "":
             continue
         idea = etree.Element("Idea")
-        
+
         # Title
         title = etree.Element("Title")
         heading1 = etree.Element("H1")
         heading1.text = row[0]
         title.append(heading1)
         idea.append(title)
-        
-        #subtitle
+
+        # subtitle
         sub = etree.Element("Subtitle")
         h2 = etree.Element("H2")
         h2.text = row[1]
         sub.append(h2)
         idea.append(sub)
-        
-        #intro
+
+        # intro
         intro = etree.Element("Intro")
         text = etree.Element("Text")
         text.text = row[2]
         intro.append(text)
         idea.append(intro)
-        
-        #Value Proposition_Canvas
-        #vpc = etree.Element("Value_Proposition_Canvas")
-        #text = etree.Element("text")
-        #text.text = row[4]
-        #vpc.append(listify_canvas(row[4], "Value_Proposition_Canvas"))
+
+        # Value Proposition_Canvas
+        # vpc = etree.Element("Value_Proposition_Canvas")
+        # text = etree.Element("text")
+        # text.text = row[4]
+        # vpc.append(listify_canvas(row[4], "Value_Proposition_Canvas"))
         idea.append(listify_canvas(row[4], "Value-Proposition-Canvas"))
-        
-        #Value Proposition_Text
+
+        # Value Proposition_Text
         vpt = etree.Element("Value-Proposition-Text")
         text = etree.Element("Text")
         text.text = row[5]
         vpt.append(text)
-        idea.append(vpt)        
-        
-        #Customer Relationships_Canvas
-        #crc = etree.Element("Customer_Relationships_Canvas")
-        #text = etree.Element("text")
-        #text.text = row[6]
-        #crc.append(text)
-        idea.append(listify_canvas(row[6], "Customer-Relationships-Canvas"))  
-        
-        #Customer Relationships_Text
+        idea.append(vpt)
+
+        # Customer Relationships_Canvas
+        # crc = etree.Element("Customer_Relationships_Canvas")
+        # text = etree.Element("text")
+        # text.text = row[6]
+        # crc.append(text)
+        idea.append(listify_canvas(row[6], "Customer-Relationships-Canvas"))
+
+        # Customer Relationships_Text
         crt = etree.Element("Customer-Relationships-Text")
         text = etree.Element("Text")
         text.text = row[7]
         crt.append(text)
-        idea.append(crt)  
-        
-        #Channels_Canvas
-        #cc = etree.Element("Channels_Canvas")
-        #text = etree.Element("text")
-        #text.text = row[8]
-        #cc.append(text)
+        idea.append(crt)
+
+        # Channels_Canvas
+        # cc = etree.Element("Channels_Canvas")
+        # text = etree.Element("text")
+        # text.text = row[8]
+        # cc.append(text)
         idea.append(listify_canvas(row[8], "Channels-Canvas"))
-        
-        #Channels_Text
+
+        # Channels_Text
         ct = etree.Element("Channels-Text")
         text = etree.Element("Text")
         text.text = row[9]
         ct.append(text)
         idea.append(ct)
-        
-        #Key Resources_Canvas
-        #krc = etree.Element("Key_Resources_Canvas")
-        #text = etree.Element("text")
-        #text.text = row[10]
-        #krc.append(text)
+
+        # Key Resources_Canvas
+        # krc = etree.Element("Key_Resources_Canvas")
+        # text = etree.Element("text")
+        # text.text = row[10]
+        # krc.append(text)
         idea.append(listify_canvas(row[10], "Key-Resources-Canvas"))
-        
-        #Key Resources_Text
+
+        # Key Resources_Text
         krt = etree.Element("Key-Resources-Text")
         text = etree.Element("text")
         text.text = row[11]
         krt.append(text)
         idea.append(krt)
-        
-        #Key Activities_Canvas
-        #kac = etree.Element("Key_Activities_Canvas")
-        #text = etree.Element("text")
-        #text.text = row[12]
-        #kac.append(text)
+
+        # Key Activities_Canvas
+        # kac = etree.Element("Key_Activities_Canvas")
+        # text = etree.Element("text")
+        # text.text = row[12]
+        # kac.append(text)
         idea.append(listify_canvas(row[12], "Key-Activities-Canvas"))
-        
-        #Key Activities_Text
+
+        # Key Activities_Text
         kat = etree.Element("Key-Activities-Text")
         text = etree.Element("Text")
         text.text = row[13]
         kat.append(text)
         idea.append(kat)
-        
-        #Revenue Streams_Canvas
-        #rsc = etree.Element("Revenue_Streams_Canvas")
-        #text = etree.Element("text")
-        #text.text = row[14]
-        #rsc.append(text)
+
+        # Revenue Streams_Canvas
+        # rsc = etree.Element("Revenue_Streams_Canvas")
+        # text = etree.Element("text")
+        # text.text = row[14]
+        # rsc.append(text)
         idea.append(listify_canvas(row[14], "Revenue-Streams-Canvas"))
-        
-        #Revenue Streams_Text
+
+        # Revenue Streams_Text
         rst = etree.Element("Revenue-Streams-Text")
         text = etree.Element("Text")
         text.text = row[15]
         rst.append(text)
         idea.append(rst)
-        
-        #Key Partners_Canvas
-        #kpc = etree.Element("Key_Partners_Canvas")
-        #text = etree.Element("text")
-        #text.text = row[16]
-        #kpc.append(text)
+
+        # Key Partners_Canvas
+        # kpc = etree.Element("Key_Partners_Canvas")
+        # text = etree.Element("text")
+        # text.text = row[16]
+        # kpc.append(text)
         idea.append(listify_canvas(row[16], "Key-Partners-Canvas"))
-        
-        #Key Partners_Text
+
+        # Key Partners_Text
         kpt = etree.Element("Key-Partners-Text")
         text = etree.Element("Text")
         text.text = row[17]
         kpt.append(text)
         idea.append(kpt)
-        
-        #Customer Segmentation_Canvas
-        #csc = etree.Element("Customer_Segmentation_Canvas")
-        #text = etree.Element("text")
-        #text.text = row[18]
-        #csc.append(text)
+
+        # Customer Segmentation_Canvas
+        # csc = etree.Element("Customer_Segmentation_Canvas")
+        # text = etree.Element("text")
+        # text.text = row[18]
+        # csc.append(text)
         idea.append(listify_canvas(row[18], "Customer-Segmentation-Canvas"))
-        
-        #Customer Segmentation_Text
+
+        # Customer Segmentation_Text
         cst = etree.Element("Customer-Segmentation-Text")
         text = etree.Element("Text")
         text.text = row[19]
         cst.append(text)
         idea.append(cst)
-        
-        #Cost Structure_Canvas
-        #csc = etree.Element("Cost Structure_Canvas")
-        #text = etree.Element("text")
-        #text.text = row[20]
-        #csc.append(text)
+
+        # Cost Structure_Canvas
+        # csc = etree.Element("Cost Structure_Canvas")
+        # text = etree.Element("text")
+        # text.text = row[20]
+        # csc.append(text)
         idea.append(listify_canvas(row[20], "Cost-Structure-Canvas"))
-        
-        #Cost Structure_Text
+
+        # Cost Structure_Text
         cst = etree.Element("Cost-Structure-Text")
         text = etree.Element("Text")
         text.text = row[21]
         cst.append(text)
         idea.append(cst)
-        
-        #Senario Fit_1
+
+        # Senario Fit_1
         sf = etree.Element("Senario-Fit-1")
         text = etree.Element("Text")
         text.text = row[23]
         sf.append(text)
         idea.append(sf)
-        
-        #Senario Fit_2
+
+        # Senario Fit_2
         sf = etree.Element("Senario-Fit-2")
         text = etree.Element("Text")
         text.text = row[24]
         sf.append(text)
         idea.append(sf)
-        
-        #Senario Fit_3
+
+        # Senario Fit_3
         sf = etree.Element("Senario-Fit-3")
         text = etree.Element("Text")
         text.text = row[25]
         sf.append(text)
         idea.append(sf)
-        
-        #Senario Fit_4
+
+        # Senario Fit_4
         sf = etree.Element("Senario-Fit-4")
         text = etree.Element("Text")
         text.text = row[26]
         sf.append(text)
         idea.append(sf)
-        
-        
-        
+
         ideas.append(idea)
         # print(row[0])
-        
+
         ideas_section.append(ideas)
-        
+
     return etree.tostring(ideas_section, encoding="unicode", method='xml')
 
 
@@ -724,7 +722,7 @@ def generate_abbrevations(book):
     df = pd.DataFrame(table[1:], columns=table[0])
     # Init XML structure
     result = "<Abbreviations-Section>\n";
-    result += "<H1>"+ABBREVIATION_TITLE+"</H1>\n";
+    result += "<H1>" + ABBREVIATION_TITLE + "</H1>\n";
     result += "<Abbreviations>\n";
     # Iterate over the rows
     for index, row in islice(df.iterrows(), 1, None):
@@ -732,7 +730,7 @@ def generate_abbrevations(book):
         key = sanitize_text(row[0])
         val = sanitize_text(row[1])
         # Create a xml string
-        result += "<Abbreviation><"+ABBREVIATION_HEADLINE_TAG+">" + key + "</"+ABBREVIATION_HEADLINE_TAG+">" + val + "</Abbreviation>\n"
+        result += "<Abbreviation><" + ABBREVIATION_HEADLINE_TAG + ">" + key + "</" + ABBREVIATION_HEADLINE_TAG + ">" + val + "</Abbreviation>\n"
     # Add closing tag
     result += "</Abbreviations>\n";
     result += "</Abbreviations-Section>\n";
@@ -763,20 +761,20 @@ def generate_sources(book, map_hash_source):
     errors = []
     # invert the mapping NUMBER -> HASH
     map_number_hash = {v: k for k, v in map_hash_source.items()}
-    
+
     # Init an array with the size of the sources
-    sources = [("","")]*len(map_hash_source)
-       
+    sources = [("", "")] * len(map_hash_source)
+
     worksheet = book.worksheet("Sources")
     table = worksheet.get_all_values()
     # Convert table data into a dataframe
     df = pd.DataFrame(table[1:], columns=table[0])
     # print(df_trends)
-    
+
     # Start with sub sections
     result = "<Sources-Sections>\n"
-    result += "<H1>"+SOURCES_TITLE+"</H1>\n"
-    result += "<Text>"+SOURCES_DESCRIPTION+"</Text>\n"
+    result += "<H1>" + SOURCES_TITLE + "</H1>\n"
+    result += "<Text>" + SOURCES_DESCRIPTION + "</Text>\n"
     # Start with the list
     result += "<Sources>\n"
     # Iterate over the sources array
@@ -786,7 +784,7 @@ def generate_sources(book, map_hash_source):
         val = sanitize_text(row[4])
         if key in map_hash_source:
             # Find the number of the source
-            source_index = map_hash_source[key]-1
+            source_index = map_hash_source[key] - 1
             # Add the value of the source to the right order of the array
             sources[source_index] = (val, responsible)
         else:
@@ -796,27 +794,27 @@ def generate_sources(book, map_hash_source):
                 "key": key,
             }
             errors.append(err)
-        
+
     # Iterate of the ordered source array and genrate the xml
     for index, (source, responsible) in enumerate(sources):
         if (len(source) == 0):
             err = {
                 "type": "Source not declared",
                 "responsible": "",
-                "key": map_number_hash[index+1],
+                "key": map_number_hash[index + 1],
             }
             errors.append(err)
         else:
-            result += '<Source responsible="'+responsible+'">\n'
-            result += "<" + SOURCES_KEY_TAG + ">" + str(index+1) + "</" + SOURCES_KEY_TAG + "> "
+            result += '<Source responsible="' + responsible + '">\n'
+            result += "<" + SOURCES_KEY_TAG + ">" + str(index + 1) + "</" + SOURCES_KEY_TAG + "> "
             result += source
             result += "\n"
             result += "</Source>\n"
-    
+
     # Close the xml tags
-    result += "</Sources>\n"    
+    result += "</Sources>\n"
     result += "</Sources-Sections>\n"
-    
+
     return result, errors
 
 
@@ -847,15 +845,13 @@ def run():
     # print(xml)
     return xml, errors
 
-
 # In[21]:
 
 
-#xml, err = run()
+# xml, err = run()
 
 
 # In[ ]:
 
 
-#xml
-
+# xml
