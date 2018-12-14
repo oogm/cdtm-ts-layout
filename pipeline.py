@@ -34,7 +34,8 @@ from lxml import etree
 
 # In[2]:
 
-BULLET_ICON = "•" # List icon for Trend Drivers, Trend Facts ...
+
+BULLET_ICON = "" # e.g. "•"
 
 # Abbreviations-Section
 ABBREVIATION_TITLE = "List of Abbrevations"
@@ -46,8 +47,7 @@ TRENDS_DESCRIPTION = ""
 TRENDS_SUB_SECTION_HEADLINE_TAG = "H2"
 TRENDS_SUB_SECTION_SLOGAN_TAG = "H3"
 TRENDS_SUB_SECTION_AREA_HEADLINE_TAG = "H4" # Trend Drivers, Trend Facts ... 
-TRENDS_SUB_SECTION_AREA_BULLET_ICON = "•" # List icon for Trend Drivers, Trend Facts ...
-TRENDS_SUB_SECTION_AREA_IMPACT_HEADLINE = "Impact on XXX"
+TRENDS_SUB_SECTION_AREA_IMPACT_HEADLINE = "Impact on the construction industry"
 
 # Sources-Section
 SOURCES_TITLE = "Sources"
@@ -88,7 +88,7 @@ def generate_xml_list(text):
     result = "<List>\n"
     li = [s.strip() for s in text.splitlines()]
     for l in li:
-        result += "<List-Element>" + TRENDS_SUB_SECTION_AREA_BULLET_ICON + " " + l+ "</List-Element>\n"
+        result += "<List-Element>" + l + "</List-Element>\n"
 
     result += "</List>"
     return result
@@ -390,7 +390,7 @@ def generate_scenario_xml(book):
         scenarios_list_element = etree.Element("List-Element")
         scenarios_list_element.text = sanitize_text(row[2])
         scenarios_list.append(scenarios_list_element)
-
+    
     scenarios_section.append(scenarios_list)
     
     # Build the XML tree
@@ -470,7 +470,7 @@ def listify_canvas(text, root_tag):
         if item == "" or item == "\n":
             continue
         post = etree.Element("List-Element")
-        post.text = BULLET_ICON + " " + item
+        post.text = BULLET_ICON + item
         root_list.append(post)
     root.append(root_list)
     return root
@@ -533,7 +533,7 @@ def generate_ideas(book):
         
         #Value Proposition_Canvas
         #vpc = etree.Element("Value_Proposition_Canvas")
-        #text = etree.Element("Text")
+        #text = etree.Element("text")
         #text.text = row[4]
         #vpc.append(listify_canvas(row[4], "Value_Proposition_Canvas"))
         idea.append(listify_canvas(row[4], "Value-Proposition-Canvas"))
@@ -547,7 +547,7 @@ def generate_ideas(book):
         
         #Customer Relationships_Canvas
         #crc = etree.Element("Customer_Relationships_Canvas")
-        #text = etree.Element("Text")
+        #text = etree.Element("text")
         #text.text = row[6]
         #crc.append(text)
         idea.append(listify_canvas(row[6], "Customer-Relationships-Canvas"))  
@@ -561,7 +561,7 @@ def generate_ideas(book):
         
         #Channels_Canvas
         #cc = etree.Element("Channels_Canvas")
-        #text = etree.Element("Text")
+        #text = etree.Element("text")
         #text.text = row[8]
         #cc.append(text)
         idea.append(listify_canvas(row[8], "Channels-Canvas"))
@@ -575,21 +575,21 @@ def generate_ideas(book):
         
         #Key Resources_Canvas
         #krc = etree.Element("Key_Resources_Canvas")
-        #text = etree.Element("Text")
+        #text = etree.Element("text")
         #text.text = row[10]
         #krc.append(text)
         idea.append(listify_canvas(row[10], "Key-Resources-Canvas"))
         
         #Key Resources_Text
         krt = etree.Element("Key-Resources-Text")
-        text = etree.Element("Text")
+        text = etree.Element("text")
         text.text = row[11]
         krt.append(text)
         idea.append(krt)
         
         #Key Activities_Canvas
         #kac = etree.Element("Key_Activities_Canvas")
-        #text = etree.Element("Text")
+        #text = etree.Element("text")
         #text.text = row[12]
         #kac.append(text)
         idea.append(listify_canvas(row[12], "Key-Activities-Canvas"))
@@ -603,7 +603,7 @@ def generate_ideas(book):
         
         #Revenue Streams_Canvas
         #rsc = etree.Element("Revenue_Streams_Canvas")
-        #text = etree.Element("Text")
+        #text = etree.Element("text")
         #text.text = row[14]
         #rsc.append(text)
         idea.append(listify_canvas(row[14], "Revenue-Streams-Canvas"))
@@ -617,7 +617,7 @@ def generate_ideas(book):
         
         #Key Partners_Canvas
         #kpc = etree.Element("Key_Partners_Canvas")
-        #text = etree.Element("Text")
+        #text = etree.Element("text")
         #text.text = row[16]
         #kpc.append(text)
         idea.append(listify_canvas(row[16], "Key-Partners-Canvas"))
@@ -631,7 +631,7 @@ def generate_ideas(book):
         
         #Customer Segmentation_Canvas
         #csc = etree.Element("Customer_Segmentation_Canvas")
-        #text = etree.Element("Text")
+        #text = etree.Element("text")
         #text.text = row[18]
         #csc.append(text)
         idea.append(listify_canvas(row[18], "Customer-Segmentation-Canvas"))
@@ -645,7 +645,7 @@ def generate_ideas(book):
         
         #Cost Structure_Canvas
         #csc = etree.Element("Cost Structure_Canvas")
-        #text = etree.Element("Text")
+        #text = etree.Element("text")
         #text.text = row[20]
         #csc.append(text)
         idea.append(listify_canvas(row[20], "Cost-Structure-Canvas"))
@@ -857,5 +857,5 @@ def run():
 # In[ ]:
 
 
-# xml
+#xml
 

@@ -1,6 +1,12 @@
 # CDTM Trend Seminar Layout XML
 
-See the the pipeline.ipynb notebook
+See the the pipeline.ipynb notebook for the process
+
+## Requirements
+
+* Docker
+* Node Package Manager (NPM)
+
 
 ## Deploy
 
