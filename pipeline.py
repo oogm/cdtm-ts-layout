@@ -817,6 +817,10 @@ def generate_sources(book, map_hash_source):
 
     return result, errors
 
+def clean_xml(xml):
+    xml = xml.replace("<List-Element></List-Element>","")
+    return xml
+
 
 # # Run the pipeline
 
@@ -842,10 +846,12 @@ def run():
     xml += sources
     # Wrap the root object arround all
     xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Root>\n' + xml + '</Root>'
+    xml = clean_xml(xml)
     # print(xml)
     return xml, errors
 
 # In[21]:
+
 
 
 # xml, err = run()
