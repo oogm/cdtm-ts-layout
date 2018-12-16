@@ -84,10 +84,10 @@ def sanitize_text_test():
 
 
 def generate_xml_list(text):
-    result = "<List>\n"
+    result = "<List>"
     li = [s.strip() for s in text.splitlines()]
     for l in li:
-        result += "<List-Element>" + l + "</List-Element>\n"
+        result += "<List-Element>" + l + "</List-Element>"
 
     result += "</List>"
     return result
@@ -356,7 +356,7 @@ def generate_trends(book):
 # </Scenarios>
 # ```
 
-# In[20]:
+# In[13]:
 
 
 def listify_sign_posts(text):
@@ -818,6 +818,9 @@ def generate_sources(book, map_hash_source):
     return result, errors
 
 
+# In[18]:
+
+
 def clean_xml(xml):
     xml = xml.replace("<List-Element></List-Element>", "")  # remove empty lists
     xml = xml.repleace("&#13;", "")  # remove some crazy unicode space
@@ -826,7 +829,7 @@ def clean_xml(xml):
 
 # # Run the pipeline
 
-# In[18]:
+# In[19]:
 
 
 def run():
@@ -848,18 +851,18 @@ def run():
     xml += sources
     # Wrap the root object arround all
     xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Root>\n' + xml + '</Root>'
+
     xml = clean_xml(xml)
     # print(xml)
     return xml, errors
 
-# In[21]:
-
+# In[22]:
 
 
 # xml, err = run()
 
 
-# In[ ]:
+# In[23]:
 
 
 # xml
