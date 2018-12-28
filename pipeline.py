@@ -823,7 +823,7 @@ def generate_sources(book, map_hash_source):
 
 def clean_xml(xml):
     xml = xml.replace("<List-Element></List-Element>", "")  # remove empty lists
-    xml = xml.repleace("&#13;", "")  # remove some crazy unicode space
+    xml = xml.replace("&#13;", "")  # remove some crazy unicode space
     return xml
 
 
