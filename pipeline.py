@@ -87,7 +87,7 @@ def generate_xml_list(text):
     result = "<List>"
     li = [s.strip() for s in text.splitlines()]
     for l in li:
-        result += "<List-Element>" + l + "</List-Element>"
+        result += "<List-Element>" + l + "</List-Element>\n"
 
     result += "</List>"
     return result
@@ -278,11 +278,11 @@ def generate_trends(book):
             trend_impact = sanitize_text(trend_row[17])
             trend_responsible = sanitize_text(trend_row[5])
 
-            result_trend = '<Trend responsible="' + trend_responsible + '">\n'
+            result_trend = '<Trend responsible="' + trend_responsible + '">'
 
             result_trend += "<" + TRENDS_SUB_SECTION_HEADLINE_TAG + ">" + trend_title + "</" + TRENDS_SUB_SECTION_HEADLINE_TAG + ">\n"
             result_trend += "<" + TRENDS_SUB_SECTION_SLOGAN_TAG + ">" + trend_slogan + "</" + TRENDS_SUB_SECTION_SLOGAN_TAG + ">\n"
-            result_trend += "<Text>\n"
+            result_trend += "<Text>"
             # Trend intro
             result_trend += trend_intro + "\n"
             # Trend Facts
@@ -296,9 +296,9 @@ def generate_trends(book):
             result_trend += generate_xml_list(trend_challanges) + "\n"
             # Trend Impact Headline
             result_trend += "<" + TRENDS_SUB_SECTION_AREA_HEADLINE_TAG + ">" + TRENDS_SUB_SECTION_AREA_IMPACT_HEADLINE + ":" + "</" + TRENDS_SUB_SECTION_AREA_HEADLINE_TAG + ">" + "\n"
-            result_trend += "<Text>" + trend_impact + "</Text>\n"
+            result_trend += "<Text>" + trend_impact + "</Text>"
             # Trend Impact Text
-            result_trend += "</Text>\n"
+            result_trend += "</Text>"
             result_trend += "</Trend>\n"
             result_trend_sub_section += result_trend
 
