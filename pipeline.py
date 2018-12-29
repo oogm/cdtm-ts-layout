@@ -16,7 +16,7 @@ from lxml import etree
 
 # # Key takeaways
 # 
-# * Use British-English right from the beginning
+# * Use American-English right from the beginning
 # * Force the people to be responsible for their stuff
 # * Force the people to work on mendeley
 # * Force the people to use harvard citation
