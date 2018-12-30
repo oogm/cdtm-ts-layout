@@ -44,7 +44,8 @@ ABBREVIATION_HEADLINE_TAG = "H6"
 # Trends-Section
 TRENDS_TITLE = "Trends"
 TRENDS_DESCRIPTION = ""
-TRENDS_SUB_SECTION_NAMES_LIST_TAG = "Header Right"
+TRENDS_SUB_SECTION_NAMES_LIST_TAG = "Header-Right"
+TRENDS_SUB_SECTION_TITLES_LIST_TAG = "Table-of-Contents-Trend-Cover-Page"
 TRENDS_SUB_SECTION_HEADLINE_TAG = "H2"
 TRENDS_SUB_SECTION_SLOGAN_TAG = "H3"
 TRENDS_SUB_SECTION_AREA_HEADLINE_TAG = "H4" # Trend Drivers, Trend Facts ... 
@@ -277,6 +278,10 @@ def generate_trends(book):
         # Trend sub section names
         trend_sub_section_names = []
         
+        
+        # Trend sub section titles
+        trend_sub_section_titles = []
+        
         # Grab the key and values
         key = sanitize_text(row[3])
         intro_text = sanitize_text(row[4])
@@ -307,6 +312,9 @@ def generate_trends(book):
             # Add the responsible person its name from each trend to the names list
             trend_sub_section_names.append(trend_responsible)
             
+            # Add the trend title to the list of trend titles per trend sub section
+            trend_sub_section_titles.append(trend_title)
+            
             result_trend = '<Trend responsible="'+trend_responsible+'">'            
             
             result_trend += "<"+TRENDS_SUB_SECTION_HEADLINE_TAG+">" + trend_title + "</"+TRENDS_SUB_SECTION_HEADLINE_TAG+">\n"
@@ -334,11 +342,17 @@ def generate_trends(book):
         # Close the trend section
         result_trend_sub_section += '</Trends>\n'
     
-        # Generate the names of trend subsection
+        # Generate the string with the names of the trend sub section
         trend_sub_section_names = stringify_remove_duplicates_and_sort_by_last_names(trend_sub_section_names)
         result_trend_sub_section += "<Trend-Sub-Section-Names>"
         result_trend_sub_section += "<"+TRENDS_SUB_SECTION_NAMES_LIST_TAG+">"+trend_sub_section_names+"</"+TRENDS_SUB_SECTION_NAMES_LIST_TAG+">"
         result_trend_sub_section += "</Trend-Sub-Section-Names>\n"
+        
+        # Generate the list of titles of the trend sub section
+        trend_sub_section_titles = "\n".join(trend_sub_section_titles)
+        result_trend_sub_section += "<Trend-Sub-Section-Titles>"
+        result_trend_sub_section += "<"+TRENDS_SUB_SECTION_TITLES_LIST_TAG+">"+trend_sub_section_titles+"</"+TRENDS_SUB_SECTION_TITLES_LIST_TAG+">"
+        result_trend_sub_section += "</Trend-Sub-Section-Titles>\n"
 
         # Close the trend sub section
         result_trend_sub_section += "</Trends-Sub-Section>\n";
