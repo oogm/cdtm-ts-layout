@@ -86,9 +86,10 @@ def sanitize_text_test():
 def generate_xml_list(text):
     result = "<List>"
     li = [s.strip() for s in text.splitlines()]
-    for l in li:
-        result += "<List-Element>" + l + "</List-Element>\n"
-
+    for i, l in enumerate(li):
+        result += "<List-Element>" + l + "</List-Element>"
+        if not (len(li) - 1) == i:
+            result += "\n"
     result += "</List>"
     return result
 
