@@ -4,4 +4,4 @@ node_modules/*
 .DS_STORE
 .ipynb_checkpoints/
 .serverless/
-.idea/vcs.xml
+.idea/vcs.xmlcredentials_demo.json
